@@ -1,14 +1,78 @@
 #include <filesystem>
+#include <fstream>
+#include <sol/sol.hpp>
+#include <utility>
+
+class c_header
+{
+public:
+    explicit c_header( std::string name )
+        : name( std::move( name ) )
+    {
+    }
+
+    void add_content( const std::string& content )
+    {
+        this->content += content;
+    }
+
+    void write( ) const
+    {
+        std::ofstream file( "preprocess/include/" + name + ".hpp" );
+        file << content;
+    }
+
+    void add_macro( const std::string& name, const std::string& content )
+    {
+        this->content += "#define " + name + " " + content + "\n";
+    }
+
+private:
+    std::string name;
+    std::string content;
+};
 
 int main( )
 {
     std::filesystem::create_directories( "preprocess/include" );
     std::filesystem::create_directories( "preprocess/scripts" );
 
+    std::cout << R"(
+
+  _ __  _ __ ___ _ __  _ __ ___   ___ ___  ___ ___
+ | '_ \| '__/ _ \ '_ \| '__/ _ \ / __/ _ \/ __/ __|
+ | |_) | | |  __/ |_) | | | (_) | (_|  __/\__ \__ \
+ | .__/|_|  \___| .__/|_|  \___/ \___\___||___/___/
+ | |            | |
+ |_|            |_|
+
+)";
+
+    int script_count = 0;
+    sol::state lua;
+
+    lua.new_usertype< c_header >( "c_header",
+                                  "add_content", &c_header::add_content,
+                                  "write", &c_header::write,
+                                  "add_macro", &c_header::add_macro );
+
+    sol::table table = lua.create_named_table( "preprocess" );
+    table[ "create_header" ] = [ ] ( const std::string& name )
+    {
+        return c_header( name );
+    };
+
     //iterate over all lua scripts in the scripts folder
     for( const auto& entry : std::filesystem::directory_iterator( "preprocess/scripts" ) )
     {
+        if( sol::protected_function_result result = lua.script_file( entry.path( ).string( ) ); !result.valid( ) )
+        {
+            sol::error err = result;
+            std::cerr << err.what( ) << std::endl;
+        }
 
+        ++script_count;
     }
 
+    std::cout << "Preprocessed " << script_count << " scripts" << std::endl;
 }

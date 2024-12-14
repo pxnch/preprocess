@@ -16,25 +16,38 @@ public:
         this->content += content;
     }
 
-    void write( ) const
+    void write( )
     {
-        std::ofstream file( "preprocess/include/" + name + ".hpp" );
+        content += "\n#endif";
+        std::ofstream file( "preprocess/include/preprocess/" + name + ".hpp" );
         file << content;
     }
 
-    void add_macro( const std::string& name, const std::string& content )
+    void add_macro( const sol::this_state state, const std::string& name, const sol::object& content )
     {
-        this->content += "#define " + name + " " + content + "\n";
+        sol::state_view lua( state );
+        const sol::protected_function_result result = lua[ "tostring" ]( content );
+        if( !result.valid( ) )
+        {
+            const sol::error err = result;
+            std::cerr << err.what( ) << std::endl;
+            return;
+        }
+
+        this->content += "#define " + name + " " + result.get< std::string >( ) + "\n";
     }
 
 private:
     std::string name;
-    std::string content;
+    std::string content = "#ifndef " + name + "_preprocess\n#define " + name + "_preprocess\n\n";
 };
 
 int main( )
 {
-    std::filesystem::create_directories( "preprocess/include" );
+    if( std::filesystem::exists( "preprocess/include" ) )
+        std::filesystem::remove_all( "preprocess/include" );
+
+    std::filesystem::create_directories( "preprocess/include/preprocess" );
     std::filesystem::create_directories( "preprocess/scripts" );
 
     std::cout << R"(
@@ -50,6 +63,9 @@ int main( )
 
     int script_count = 0;
     sol::state lua;
+    lua.open_libraries( sol::lib::base, sol::lib::package, sol::lib::coroutine, sol::lib::string, sol::lib::os,
+                        sol::lib::math, sol::lib::table, sol::lib::debug, sol::lib::bit32, sol::lib::io,
+                        sol::lib::utf8 );
 
     lua.new_usertype< c_header >( "c_header",
                                   "add_content", &c_header::add_content,

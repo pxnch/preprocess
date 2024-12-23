@@ -19,6 +19,9 @@ This will now run preprocess everytime as the first build step and the target ca
 Every .lua File inside of the preprocess/scripts/ Folder will be run
 
 # Lua API
+## Lua Version
+This is running [CMake Lua Version 5.4.7](https://github.com/walterschell/Lua/tree/52674cd192943015b99f51225f8cf8a116aa7293) - [Manual](https://www.lua.org/manual/5.4/)
+## Custom API
 ```lua
 local header = preprocess.create_header(name: string) -- Create new Header Object
 header:add_content(content: string) -- Add Raw Text to the Header

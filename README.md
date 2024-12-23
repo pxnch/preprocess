@@ -28,3 +28,9 @@ header:add_content(content: string) -- Add Raw Text to the Header
 header:add_macro(name: string, content: any) -- Create a Macro
 header:write() -- Write to the File
 ```
+
+# Credits
+[walterschell](https://github.com/walterschell) - [CMake Lua Version](https://github.com/walterschell/Lua)
+
+[ThePhD](https://github.com/ThePhD) - [Sol3](https://github.com/ThePhD/sol2)
+
